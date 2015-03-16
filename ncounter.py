@@ -1,71 +1,87 @@
 #!python
 #Number of Monsters XP Multiplier
-Single Monster —
-Pair (2 monsters) × 1.5
-Group (3-6 monsters) × 2
-Gang (7-10 monsters) × 2.5
-Mob (11-14 monsters) × 3
-Horde (15 or more monsters) × 4
-xpLimits = [[25, 50, 75, 100],
-			[50, 100, 150, 200],
-			[75, 150, 225, 400],
-			[125, 250, 375, 500],
-			[250, 500, 750, 1100],
-			[300, 600, 900, 1400],
-			[350, 750, 1100, 1700],
-			[450, 900, 1400, 2100],
-			[550, 1100, 1600, 2400],
-			[600, 1200, 1900, 2800],
-			[800, 1600, 2400, 3600],
-			[1000, 2000, 3000, 4500],
-			[1100, 2200, 3400, 5100],
-			[1250, 2500, 3800, 5700],
-			[1400, 2800, 4300, 6400],
-			[1600, 3200, 4800, 7200],
-			[2000, 3900, 5900, 8800],
-			[2100, 4200, 6300, 9500],
-			[2400, 4900, 7300, 10900],
-			[2800, 5700, 8500, 12700]]
+from collections import namedtuple 
+xpMultiplier = [0, 1, 1.5, 2, 2, 2, 2, 2.5, 2.5, 2.5, 2.5, 3, 3, 3, 3]; 4
+xpLimitTable = [[25, 50, 75, 100],
+								[50, 100, 150, 200],
+								[75, 150, 225, 400],
+								[125, 250, 375, 500],
+								[250, 500, 750, 1100],
+								[300, 600, 900, 1400],
+								[350, 750, 1100, 1700],
+								[450, 900, 1400, 2100],
+								[550, 1100, 1600, 2400],
+								[600, 1200, 1900, 2800],
+								[800, 1600, 2400, 3600],
+								[1000, 2000, 3000, 4500],
+								[1100, 2200, 3400, 5100],
+								[1250, 2500, 3800, 5700],
+								[1400, 2800, 4300, 6400],
+								[1600, 3200, 4800, 7200],
+								[2000, 3900, 5900, 8800],
+								[2100, 4200, 6300, 9500],
+								[2400, 4900, 7300, 10900],
+								[2800, 5700, 8500, 12700]]
 
 Player = namedtuple('Player', ['level', 'name'])
-Enemy = namedtuple('Enemy', ['level', 'name'])]
+Enemy = namedtuple('Enemy', ['level', 'name'])
+class blankContext():
+	def index(self):
+		print "nyi"	
+	def add(self):
+		print "nyi"	
+	def delete(self):
+		print "nyi"	
+	def clone(self):
+		print "nyi"	
+	def edit(self, input):
+		print "Invalid command"
+	def save(self, input):
+		print "nyi"
+	def load(self, input):
+		print "nyi" 
+	def getMarker(self):
+		return "O"
 
 class Party():
-	def __init__(self):
+	def __init__(self, verbose=False):
+		self.verbose = verbose
 		self.players = []
 		self.xpLimits = [0, 0, 0, 0]
 	def index(self):
-		print "Players:\n"
-		for (i, player) in (range(1, len(self.players + 1)), self.players):
-			print "%d) %s level %d\n"%(i, player.name, player.level)
-		print "-------------------------------\n"
-		print "Party XP limits: Easy %d Medium: %d Hard: %d Deadly: %d\n"%self.xpLimits	
-	def add(self, input):
-		name = input("Name: ")
+		print "Players:"
+		for i, player in enumerate(self.players):
+			print "%d) %s level %d"%(i+1, player.name, player.level)
+		print "-------------------------------"
+		print "Party XP limits: Easy %d Medium: %d Hard: %d Deadly: %d"%tuple(self.xpLimits)
+	def add(self):
+		name = raw_input("Name: ")
 		if not name:
 			name = "player"
 		while 1:
-			level = int(input("Level: "))
+			level = int(raw_input("Level: "))
 			if level and level >= 1 and level <= 20:
 				break
-			else
-				print "must be 1-20\n"
-		players.append(Player(level, name))
-	def delete(self, input):
-		target = int(input)
-		if target and target > 0  and target < len(self.players):
-			del self.players[target]
+			else:
+				print "must be 1-20"
+		self.players.append(Player(level, name))
+		self.calcXpLimits()
+	def delete(self):
+		target = int(raw_input("id: "))
+		if target and target > 0  and target <= len(self.players):
+			del self.players[target-1]
+			self.calcXpLimits()
 		else:
-			print "Invalid Index\n"
-	def clone(self, input):
-		target = int(input)
-		if target and target > 0  and target < len(self.players):
-			targetPlayer = self.players[target]
+			print "Invalid Index"
+	def clone(self):
+		target = int(raw_input("id: "))
+		if target > 0  and target <= len(self.players):
+			targetPlayer = self.players[target-1]
 			self.players.append(Player(targetPlayer.level, targetPlayer.name))
 		else:
-			print "Invalid Index\n"
+			print "Invalid Index"
 	def edit(self, input):
-		print "Invalid command\n"
+		print "Invalid command"
 	def save(self, input):
 		print "nyi"
 	def load(self, input):
@@ -73,9 +89,15 @@ class Party():
 	def calcXpLimits(self):
 		limits = [0, 0, 0, 0]
 		for p in self.players:
+			if self.verbose:
+				print "player %s level %s: "
 			for i in range(0, 4):
+				if self.verbose:
+					print xpLimitTable[p.level - 1][i]
 				limits[i] += xpLimitTable[p.level - 1][i]
 		self.xpLimits = limits
+	def getMarker(self):
+		return "P"
 			
 class Adventure():
 	def __init__(self, players=None):
@@ -86,39 +108,41 @@ class Adventure():
 			self.players = players
 	def index(self):
 		print "Encounters: "
-		for (i, encounter) in (range(1, len(self.encounters + 1)), self.encounters):
-			print encounter.descriptionString(i)+"\n"
-	def add(self, input):
-		name = input("Name: ")
+		for i, encounter in enumerate(self.encounters):
+			print encounter.descriptionString(i+1)+""
+	def add(self):
+		name = raw_input("Name: ")
 		if not name:
 			name = "encounter"
 		encounters.append(Encounter(level, name))
-	def delete(self, input):
-		target = int(input)
+	def delete(self):
+		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
-			del self.encounters[target]
+			del self.encounters[target-1]
 		else:
-			print "Invalid Index\n"
-	def clone(self, input):
-		target = int(input)
+			print "Invalid Index"
+	def clone(self):
+		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
-			self.encounters.append(Encounter(self.encounters[target])
+			self.encounters.append(Encounter(self.encounters[target]))
 		else:
-			print "Invalid Index\n" 
-	def edit(self, input):
-		target = int(input)
+			print "Invalid Index" 
+	def edit(self):
+		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
-			return self.encounters[target]
+			return self.encounters[target-1]
 		else:
-			print "Invalid Index\n" 
+			print "Invalid Index" 
 			return self
 	def save(self, input):
 		print "nyi"
 	def load(self, input):
 		print "nyi"
+	def getMarker(self):
+		return "A"
 	
 class Encounter():
-def __init__(self, players=None):
+	def __init__(self, players=None):
 		self.encounters = []
 		if players is None:
 			self.players = Adventure()
@@ -127,46 +151,59 @@ def __init__(self, players=None):
 	def index(self):
 		print "Encounters: "
 		for (i, encounter) in (range(1, len(self.encounters + 1)), self.encounters):
-			print encounter.descriptionString(i)+"\n"
+			print encounter.descriptionString(i)+""
 	def add(self, input):
-		name = input("Name: ")
+		name = raw_input("Name: ")
 		if not name:
 			name = "encounter"
 		encounters.append(Encounter(level, name))
-	def delete(self, input):
-		target = int(input)
+	def delete(self):
+		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
 			del self.encounters[target]
 		else:
-			print "Invalid Index\n"
-	def clone(self, input):
-		target = int(input)
+			print "Invalid Index"
+	def clone(self):
+		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
-			self.encounters.append(Encounter(self.encounters[target])
+			self.encounters.append(Encounter(self.encounters[target]))
 		else:
-			print "Invalid Index\n" 
-	def edit(self, input):
-		target = int(input)
+			print "Invalid Index" 
+	def edit(self):
+		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
 			return self.encounters[target]
 		else:
-			print "Invalid Index\n" 
+			print "Invalid Index" 
 			return self
 	def save(self, input):
 		print "nyi"
 	def load(self, input):
 		print "nyi"
+	def getMarker():
+		return "E"
 
 currentContext = blankContext()
-players = Party()
-adventure = Adventure(players)
+partyContext = Party()
+adventureContext = Adventure(partyContext)
+command = ""
 while command is not "quit":
-	command = input("<-|->")
-	if command is "party":
-	elif command is "encounters":
-	elif command is "add":
-	elif command is	"delete":
-	elif command is "clone":
-	elif command is "edit": 
-
-//context add delete clone edit save load
+	command = raw_input("<-|%s|->"%currentContext.getMarker())
+	if command == "party":
+		currentContext = partyContext
+	elif command == "encounters":
+		currentContext = adventureContext
+	elif command == "add":
+		currentContext.add()
+	elif command == "index":
+		currentContext.index()
+	elif command ==	"delete":
+		currentContext.delete()
+	elif command == "clone":
+		currentContext.clone()
+	elif command == "edit": 
+		currentContext.edit()
+	else:
+		print command
+		print "whuu"
+#context add delete clone edit save load
