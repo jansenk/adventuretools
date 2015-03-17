@@ -42,6 +42,36 @@ class blankContext():
 		print "nyi" 
 	def getMarker(self):
 		return "O"
+		
+class Context():
+	def __init__(self):
+		self.components = []
+	def index(self):
+		print self.getTitle()
+		for i, component in enumerate(self.components):
+			print component.listString(i)
+		self.printSummaryString()
+	def indexBasedOperation(self, operation, arg):
+			target = self.demandId(arg);
+			if target > 0 and target <= len(self.components):
+				return operation(self.components, self.components[target-1])
+	def delete(self, arg):
+			self.indexBasedOperation((lambda l c: del c), arg)
+	def clone(self, arg):
+			self.indexBasedOperation((lambda l c: l.append(self.makeComponent(c))), arg)
+	def edit(self, arg):
+			self.indexBasedOperation((lambda l c: ))
+	def demandId(self, arg):
+		if type(" ") == type(arg) and arg.isdigit():
+			return int(arg)
+		else:
+			while not parsed:
+				try:
+					x = int(raw_input('ID: '))
+					parsed = True # we only get here if the previous line didn't throw an exception
+				except ValueError:
+					print 'Invalid value!'
+			return x
 
 class Party():
 	def __init__(self, verbose=False):
