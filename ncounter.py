@@ -1,7 +1,8 @@
 #!python
 #Number of Monsters XP Multiplier
 from collections import namedtuple 
-xpMultiplier = [0, 1, 1.5, 2, 2, 2, 2, 2.5, 2.5, 2.5, 2.5, 3, 3, 3, 3]; 4
+xpMultiplier = [0, 1, 1.5, 2, 2, 2, 2, 2.5, 2.5, 2.5, 2.5, 3, 3, 3, 3, 4];
+xpLimitNames = ["Easy", "Medium", "Hard", "Deadly"]
 xpLimitTable = [[25, 50, 75, 100],
 								[50, 100, 150, 200],
 								[75, 150, 225, 400],
@@ -22,9 +23,12 @@ xpLimitTable = [[25, 50, 75, 100],
 								[2100, 4200, 6300, 9500],
 								[2400, 4900, 7300, 10900],
 								[2800, 5700, 8500, 12700]]
+								
+def hr():
+		print "-------------------------------"
 
 Player = namedtuple('Player', ['level', 'name'])
-Enemy = namedtuple('Enemy', ['level', 'name'])
+Enemy = namedtuple('Enemy', ['xp', 'name'])
 class blankContext():
 	def index(self):
 		print "nyi"	
@@ -36,6 +40,7 @@ class blankContext():
 		print "nyi"	
 	def edit(self, input):
 		print "Invalid command"
+		return self
 	def save(self, input):
 		print "nyi"
 	def load(self, input):
@@ -50,9 +55,10 @@ class Party():
 		self.xpLimits = [0, 0, 0, 0]
 	def index(self):
 		print "Players:"
+		hr()
 		for i, player in enumerate(self.players):
 			print "%d) %s level %d"%(i+1, player.name, player.level)
-		print "-------------------------------"
+		hr()
 		print "Party XP limits: Easy %d Medium: %d Hard: %d Deadly: %d"%tuple(self.xpLimits)
 	def add(self):
 		name = raw_input("Name: ")
@@ -73,6 +79,7 @@ class Party():
 			self.calcXpLimits()
 		else:
 			print "Invalid Index"
+		self.calcXpLimits()
 	def clone(self):
 		target = int(raw_input("id: "))
 		if target > 0  and target <= len(self.players):
@@ -80,8 +87,10 @@ class Party():
 			self.players.append(Player(targetPlayer.level, targetPlayer.name))
 		else:
 			print "Invalid Index"
+		self.calcXpLimits()
 	def edit(self, input):
 		print "Invalid command"
+		return self
 	def save(self, input):
 		print "nyi"
 	def load(self, input):
@@ -100,21 +109,16 @@ class Party():
 		return "P"
 			
 class Adventure():
-	def __init__(self, players=None):
+	def __init__(self):
 		self.encounters = []
-		if players is None:
-			self.players = Adventure()
-		else:
-			self.players = players
 	def index(self):
 		print "Encounters: "
+		hr()
 		for i, encounter in enumerate(self.encounters):
-			print encounter.descriptionString(i+1)+""
+			print encounter.simpleDescription(i+1)+" ("+xpLimitNames[encounter.difficulty()]+")"
+		hr()
 	def add(self):
-		name = raw_input("Name: ")
-		if not name:
-			name = "encounter"
-		encounters.append(Encounter(level, name))
+		self.encounters.append(Encounter(raw_input("Name: ")))
 	def delete(self):
 		target = int(raw_input("id: "))
 		if target and target > 0  and target < len(self.encounters):
@@ -129,7 +133,7 @@ class Adventure():
 			print "Invalid Index" 
 	def edit(self):
 		target = int(raw_input("id: "))
-		if target and target > 0  and target < len(self.encounters):
+		if target and target > 0  and target <= len(self.encounters):
 			return self.encounters[target-1]
 		else:
 			print "Invalid Index" 
@@ -142,67 +146,113 @@ class Adventure():
 		return "A"
 	
 class Encounter():
-	def __init__(self, players=None):
-		self.encounters = []
-		if players is None:
-			self.players = Adventure()
+	internalCounter = 1
+	def __init__(self, name=None):
+		self.enemies = []
+		self.totalXp = 0
+		self.multiplier = 0
+		self.adjusted = 0
+		print "Name is "+str(name)
+		if name is None or name.strip() == "":
+			self.name = "Encounter"+str(Encounter.internalCounter)
+			Encounter.internalCounter += 1
 		else:
-			self.players = players
+			self.name = name
 	def index(self):
-		print "Encounters: "
-		for (i, encounter) in (range(1, len(self.encounters + 1)), self.encounters):
-			print encounter.descriptionString(i)+""
-	def add(self, input):
+		print "Encounter: "+self.name
+		hr()
+		for i, enemy in enumerate(self.enemies):
+			print "%d) %s (%d XP)"%(i + 1, enemy.name, enemy.xp)
+		hr()
+		print self.statString()
+		print self.difficultyLine()
+	def add(self):
 		name = raw_input("Name: ")
 		if not name:
-			name = "encounter"
-		encounters.append(Encounter(level, name))
+			name = "monster"
+		while 1:
+			xp = int(raw_input("XP: "))
+			if xp and xp > 0:
+				break
+			else:
+				print "must be a positive number"
+		self.enemies.append(Enemy(xp, name))
+		self.recalculate()
 	def delete(self):
 		target = int(raw_input("id: "))
-		if target and target > 0  and target < len(self.encounters):
-			del self.encounters[target]
+		if target and target > 0  and target < len(self.enemies):
+			del self.enemies[target]
 		else:
 			print "Invalid Index"
+		self.recalculate()
 	def clone(self):
 		target = int(raw_input("id: "))
-		if target and target > 0  and target < len(self.encounters):
-			self.encounters.append(Encounter(self.encounters[target]))
+		if target and target > 0  and target < len(self.enemies):
+			self.enemies.append(Enemy(self.enemies[target]))
 		else:
 			print "Invalid Index" 
+		self.recalculate()
 	def edit(self):
-		target = int(raw_input("id: "))
-		if target and target > 0  and target < len(self.encounters):
-			return self.encounters[target]
-		else:
-			print "Invalid Index" 
-			return self
+		print "nyi"
+		return self
 	def save(self, input):
 		print "nyi"
 	def load(self, input):
 		print "nyi"
-	def getMarker():
+	def getMarker(self):
 		return "E"
+	def recalculate(self):
+		xp = 0;
+		for e in self.enemies:
+			xp += e.xp
+		self.totalXp = xp
+		self.multiplier = xpMultiplier[min(len(self.enemies), 15)] 
+		self.adjusted = self.totalXp * self.multiplier
+	def simpleDescription(self, number):
+		return str(number) + ") "+ self.name +": "+ self.statString()
+	def statString(self):
+		return "Total Xp: %d Enemies: %d Multiplier: %dx Adjusted: %d"%(self.totalXp, len(self.enemies), self.multiplier, self.adjusted)
+	def difficulty(self):
+		for i, val in enumerate(activeParty.xpLimits):
+			#print "Checking "+xpLimitNames[i]
+			#print "The limit is %d and we are adjusted xp %d"%(val, self.adjusted)
+			if self.adjusted <= val:
+				#print "We fall into this category"
+				return i
+			#print "We're too hard for this category"
+		#print "Deadly it is"
+		return 3
+	def difficultyLine(self):
+		d = self.difficulty()
+		remainingXp = 0 if d == 3 else activeParty.xpLimits[d] - self.adjusted
+		return "%s Encounter: %d Adjusted / %d Limit (%d Remaining)"%(xpLimitNames[d], self.adjusted, activeParty.xpLimits[d], remainingXp) 
+
+
+			
 
 currentContext = blankContext()
-partyContext = Party()
-adventureContext = Adventure(partyContext)
+activeParty = Party()
+adventureContext = Adventure()
 command = ""
 while command is not "quit":
 	command = raw_input("<-|%s|->"%currentContext.getMarker())
-	if command == "party":
-		currentContext = partyContext
-	elif command == "encounters":
+	if command == "party" or command == "p":
+		currentContext = activeParty
+		currentContext.index()
+	elif command == "encounters" or command == "a":
 		currentContext = adventureContext
+		currentContext.index()
 	elif command == "add":
 		currentContext.add()
-	elif command == "index":
+	elif command == "index" or  command == "list" or  command == "l":
 		currentContext.index()
-	elif command ==	"delete":
+	elif command == "delete":
 		currentContext.delete()
 	elif command == "clone":
 		currentContext.clone()
 	elif command == "edit": 
-		currentContext.edit()
+		currentContext = currentContext.edit()
+		currentContext.index()
 	else:
 		print command
 		print "whuu"
