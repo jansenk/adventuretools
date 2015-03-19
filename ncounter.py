@@ -23,31 +23,24 @@ xpLimitTable = [[25, 50, 75, 100],
 								[2100, 4200, 6300, 9500],
 								[2400, 4900, 7300, 10900],
 								[2800, 5700, 8500, 12700]]
-								
+
+def playerLevelValidator(arg):
+	if numberValidation(arg):
+		parsed = int(arg)
+		return parsed > 0 and parsed <= 20
+	return False
+def numberValidation(arg):
+	return arg and type(arg) == type("") and arg.isDigit()
+def greaterThanZero(arg):
+	return numberValidation(arg) and int(arg) > 0
 def hr():
 		print "-------------------------------"
+def demandInput(arg, prompt, validator):
+	while(!validator(arg)):
+		arg = input(prompt)
 
 Player = namedtuple('Player', ['level', 'name'])
 Enemy = namedtuple('Enemy', ['xp', 'name'])
-class blankContext():
-	def index(self):
-		print "nyi"	
-	def add(self):
-		print "nyi"	
-	def delete(self):
-		print "nyi"	
-	def clone(self):
-		print "nyi"	
-	def edit(self, input):
-		print "Invalid command"
-		return self
-	def save(self, input):
-		print "nyi"
-	def load(self, input):
-		print "nyi" 
-	def getMarker(self):
-		return "O"
-
 class Party():
 	def __init__(self, verbose=False):
 		self.verbose = verbose
@@ -60,8 +53,7 @@ class Party():
 			print "%d) %s level %d"%(i+1, player.name, player.level)
 		hr()
 		print "Party XP limits: Easy %d Medium: %d Hard: %d Deadly: %d"%tuple(self.xpLimits)
-	def add(self):
-		name = raw_input("Name: ")
+	def add(self, args):
 		if not name:
 			name = "player"
 		while 1:
@@ -72,7 +64,7 @@ class Party():
 				print "must be 1-20"
 		self.players.append(Player(level, name))
 		self.calcXpLimits()
-	def delete(self):
+	def delete(self, args):
 		target = int(raw_input("id: "))
 		if target and target > 0  and target <= len(self.players):
 			del self.players[target-1]
@@ -80,8 +72,7 @@ class Party():
 		else:
 			print "Invalid Index"
 		self.calcXpLimits()
-	def clone(self):
-		target = int(raw_input("id: "))
+	def clone(self, args):
 		if target > 0  and target <= len(self.players):
 			targetPlayer = self.players[target-1]
 			self.players.append(Player(targetPlayer.level, targetPlayer.name))
@@ -107,6 +98,21 @@ class Party():
 		self.xpLimits = limits
 	def getMarker(self):
 		return "P"
+	def levelUp(self, args):
+		if len(args) == 1:
+			increase = 1
+		else:
+			try: 
+				increase = int(args[1])
+			except:
+				print "invalid input"
+		newList = []
+		for p in self.players:
+			newList.append(Player(p.level + increase, p.name))
+		self.players = newList
+			
+				
+				
 			
 class Adventure():
 	def __init__(self):
@@ -178,8 +184,8 @@ class Encounter():
 				print "must be a positive number"
 		self.enemies.append(Enemy(xp, name))
 		self.recalculate()
-	def delete(self):
-		target = int(raw_input("id: "))
+	def delete(self, args):
+		if len(args) > 1 
 		if target and target > 0  and target < len(self.enemies):
 			del self.enemies[target]
 		else:
@@ -229,31 +235,36 @@ class Encounter():
 
 
 			
-
-currentContext = blankContext()
-activeParty = Party()
+parties = getParties()
+activeParty = parties[0]
 adventureContext = Adventure()
+currentContext = activeParty
 command = ""
 while command is not "quit":
-	command = raw_input("<-|%s|->"%currentContext.getMarker())
-	if command == "party" or command == "p":
+	args = raw_input("<-|%s|->"%currentContext.getMarker()).split(" ")
+	if args[0] == "party" or args[0] == "p":
 		currentContext = activeParty
 		currentContext.index()
-	elif command == "encounters" or command == "a":
+	elif args[0] == "design" or args[0] == "d":
 		currentContext = adventureContext
+		currentContext.index(args)
+	elif args[0] == "add" or args[0] == "a":
+		currentContext.add(args)
+	elif args[0] == "index" or  args[0] == "list" or  args[0] == "l":
+		currentContext.index(args)
+	elif args[0] == "delete" or args[0] == "x":
+		currentContext.delete(args)
+	elif args[0] == "clone" or args[0] == "c":
+		currentContext.clone(args)
+	elif args[0] == "edit" or args[0] == "e": 
+		currentContext = currentContext.edit(args)
 		currentContext.index()
-	elif command == "add":
-		currentContext.add()
-	elif command == "index" or  command == "list" or  command == "l":
-		currentContext.index()
-	elif command == "delete":
-		currentContext.delete()
-	elif command == "clone":
-		currentContext.clone()
-	elif command == "edit": 
-		currentContext = currentContext.edit()
-		currentContext.index()
+	elif args[0] == "levelup" or args[0] == "u": 
+
 	else:
 		print command
 		print "whuu"
+
+def getParties():
+	return [Party()]
 #context add delete clone edit save load
